@@ -214,8 +214,17 @@ export default class SuperchargedLinks extends Plugin {
 	}
 
 	_watchContainer(viewType: string, container: HTMLElement, plugin: SuperchargedLinks, selector: string, filter_collapsible: boolean = false) {
+		// Debounce to coalesce bursts of mutations (folder expand, bulk rename,
+		// drag-and-drop) into a single decoration pass. Leading-edge: first fire
+		// runs immediately for responsive initial updates; subsequent fires
+		// within the 50ms window are coalesced.
+		const debouncedUpdate = debounce(
+			() => plugin.updateContainer(container, plugin, selector, filter_collapsible),
+			50,
+			true,
+		);
 		let observer = new MutationObserver((records, _) => {
-			plugin.updateContainer(container, plugin, selector, filter_collapsible);
+			debouncedUpdate();
 		});
 		observer.observe(container, { subtree: true, childList: true, attributes: false });
 		if (viewType) {
@@ -227,23 +236,38 @@ export default class SuperchargedLinks extends Plugin {
 		// Used for efficient updating of the backlinks panel
 		// Only loops through newly added DOM nodes instead of changing all of them
 		if (!plugin.settings.enableBacklinks) return;
-		let observer = new MutationObserver((records, _) => {
-			records.forEach((mutation) => {
-				if (mutation.type === 'childList') {
-					mutation.addedNodes.forEach((n) => {
-						if ('className' in n) {
-							// @ts-ignore
-							if (n.className.includes && typeof n.className.includes === 'function' && n.className.includes(parent_class)) {
-								const fileDivs = (n as HTMLElement).findAll(selector);
-								for (let i = 0; i < fileDivs.length; ++i) {
-									const link = fileDivs[i] as HTMLElement;
-									updateDivExtraAttributes(plugin.app, plugin.settings, link, "");
+
+		// Queue mutation records so the debounced callback can process them as a batch.
+		// Each record carries unique addedNodes, so we can't just drop coalesced fires.
+		let pendingRecords: MutationRecord[] = [];
+		const processPending = debounce(
+			() => {
+				const records = pendingRecords;
+				pendingRecords = [];
+				records.forEach((mutation) => {
+					if (mutation.type === 'childList') {
+						mutation.addedNodes.forEach((n) => {
+							if ('className' in n) {
+								// @ts-ignore
+								if (n.className.includes && typeof n.className.includes === 'function' && n.className.includes(parent_class)) {
+									const fileDivs = (n as HTMLElement).findAll(selector);
+									for (let i = 0; i < fileDivs.length; ++i) {
+										const link = fileDivs[i] as HTMLElement;
+										updateDivExtraAttributes(plugin.app, plugin.settings, link, "");
+									}
 								}
 							}
-						}
-					});
-				}
-			});
+						});
+					}
+				});
+			},
+			50,
+			true,
+		);
+
+		let observer = new MutationObserver((records, _) => {
+			pendingRecords.push(...records);
+			processPending();
 		});
 		observer.observe(container, { subtree: true, childList: true, attributes: false });
 		plugin.observers.push([observer, viewType, selector]);
