@@ -91,9 +91,11 @@ export default class SuperchargedLinks extends Plugin {
 		plugin.registerViewType('starred', plugin, '.nav-file-title-content');
 		plugin.registerViewType('file-explorer', plugin, '.nav-file-title-content');
 
-		if (plugin.app?.plugins?.plugins?.['folder-notes']) {
-			// console.log('Supercharged links: Enabling folder notes support');
-			plugin.registerViewType('file-explorer', plugin, '.has-folder-note .tree-item-inner');
+		// Folder decoration: opt-in setting, applies to ALL folders (not just those
+		// with the folder-notes plugin's `.has-folder-note` class). Resolution is
+		// handled downstream in updateDivExtraAttributes via resolveFolderNoteDest.
+		if (plugin.settings.enableFolderDecoration) {
+			plugin.registerViewType('file-explorer', plugin, '.nav-folder-title-content');
 		}
 
 		plugin.registerViewType('recent-files', plugin, '.nav-file-title-content');

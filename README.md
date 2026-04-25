@@ -43,6 +43,23 @@ Community plugins:
 
 Want support for another plugin? Create an issue or a pull request here in the repo!
 
+## Folder Notes Decoration
+
+Supercharged Links can decorate folder nav items in the file explorer based on the frontmatter of their associated folder note.
+
+**How to enable:**
+1. Open Settings → Supercharged Links → toggle **Decorate folder notes** ON.
+2. Optionally install [LostPaul/obsidian-folder-notes](https://github.com/LostPaul/obsidian-folder-notes) for the richest support — custom templates, alternate storage locations, and respect for detached/excluded folders.
+3. Add your target attributes (e.g. `status, priority`) to the target attributes list.
+
+**What gets decorated:**
+- Folders with an associated note via the `folder-notes` plugin's public API (respects the plugin's own exclusion and detachment settings).
+- Folders using the convention `<folder>/<folder>.md` (works even without the folder-notes plugin installed).
+
+**What does NOT get decorated:** folders with no associated note. In particular, a folder whose path shares a basename with an unrelated file elsewhere in the vault will not be decorated — linkpath basename matching is deliberately not used for folders to avoid false positives.
+
+The setting is off by default to preserve existing behavior on upgrade. Enable it when you're ready to extend your CSS snippets to target `.nav-folder-title-content` elements.
+
 
 ## Example workflow
 Let's say I have a note about Jim called `Jim.md` with the tag `#person` and some [YAML frontmatter](https://help.obsidian.md/Advanced+topics/YAML+front+matter). 

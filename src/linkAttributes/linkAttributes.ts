@@ -1,6 +1,7 @@
-import { App, getAllTags, getLinkpath, LinkCache, MarkdownPostProcessorContext, MarkdownView, TFile } from "obsidian"
+import { App, getAllTags, getLinkpath, LinkCache, MarkdownPostProcessorContext, MarkdownView, TFile, TFolder } from "obsidian"
 import { SuperchargedLinksSettings } from "src/settings/SuperchargedLinksSettings"
 import SuperchargedLinks from "../../main";
+import { resolveFolderNoteDest } from "./folderNoteResolver";
 
 export function clearExtraAttributes(link: HTMLElement) {
     Object.values(link.attributes).forEach(attr => {
@@ -157,7 +158,17 @@ export function updateDivExtraAttributes(app: App, settings: SuperchargedLinksSe
             break;
         }
     }
-    const dest = app.metadataCache.getFirstLinkpathDest(getLinkpath(linkName), destName)
+    // Detect whether the link refers to a folder; if so, resolve via the
+    // folder-note resolver (which never falls back to linkpath basename
+    // matching — avoids cross-vault false positives like folder "Inbox"
+    // resolving to an unrelated "Inbox.md" at vault root).
+    let dest: TFile | null = null;
+    const abstract = app.vault.getAbstractFileByPath(linkName);
+    if (abstract instanceof TFolder) {
+        dest = resolveFolderNoteDest(app, linkName);
+    } else {
+        dest = app.metadataCache.getFirstLinkpathDest(getLinkpath(linkName), destName);
+    }
 
     if (dest) {
         const new_props = fetchTargetAttributesSync(app, settings, dest, true);

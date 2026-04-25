@@ -89,6 +89,24 @@ Styling can be done using the Style Settings plugin.
 			});
 
 		new Setting(containerEl)
+			.setName('Decorate folder notes')
+			.setDesc(
+				'If true, applies data-link-* attributes to folder nav items when the ' +
+				'folder has an associated folder note (via the folder-notes plugin, or ' +
+				'an inside-folder note with the same name as the folder). ' +
+				'Disabled by default to preserve existing behavior.'
+			)
+			.addToggle(toggle => {
+				toggle.setValue(this.plugin.settings.enableFolderDecoration)
+				toggle.onChange(async value => {
+					this.plugin.settings.enableFolderDecoration = value
+					await this.plugin.saveSettings()
+					// Re-initialize observers so the new selector takes effect immediately
+					this.plugin.initViewObservers(this.plugin);
+				})
+			});
+
+		new Setting(containerEl)
 			.setName('Enable in Bases')
 			.setDesc('If true, this will also supercharge Obsidian Bases.')
 			.addToggle(toggle => {
