@@ -10,6 +10,12 @@ declare module "obsidian" {
                 dataview?: {
                     api?: DataviewAPI;
                 };
+                "folder-notes"?: {
+                    api?: {
+                        version: string;
+                        getEnabledFolderNote(folderPath: string): TFile | null;
+                    };
+                };
             };
         };
     }
